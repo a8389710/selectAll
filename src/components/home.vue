@@ -1,115 +1,191 @@
 <template>
   <div>
-    <ul class='goods-list-menu'>
-      <li class='goods-list' v-for="(item,index) in data" :key="index" :data-set="index">
-        <p class='goods-name'>{{ item.name }}</p>
-        <img class='goods-cover' :src=item.cover alt="">
-        <p class='goods-author'>{{ item.author }}</p>
-        <p> {{ item.price }} <span>元</span> </p>
-        <button class="add-goods-buycar" @click="addBuycar">添加商品到购物车</button>
-      </li>
-    </ul>
-    <button class="to-goods-buycar" @click="toBuycar">跳转到购物车</button>
+    <div v-if="buycarDate.length == 0">空</div>
+    <div v-else class="goods-wrap">
+      <ul  class='goods-list-menu'>
+        <li class='goods-list' v-for="(item,index) in buycarDate" :key="item.goodsId">
+          <input type="checkbox" class="checked-button" :checked="readyPayGoods.indexOf(item) != -1" @click="checkOne(index,item)"><span>选中</span>
+          <p class='goods-name'>{{ item.goodsname }}</p>
+          <p class='goods-author'>{{ item.goodsauthor }}</p>
+          <p> {{ item.goodsprice }}</p>
+          <div class="count-btn-wrap">
+            <span class="addGoods btn-span" @click="relCount(index)">-</span>
+            <input class="goods-count" type="number" style="width:50px;textAlign:center" v-model="item.goodscount" readonly>
+            <span class="delGoods btn-span" @click="addCount(index)">+</span>
+          </div>
+          <p>单品总价： {{goodsTotal(item.goodsprice,item.goodscount)}}元</p>
+          <span class="delete-span" @click="deleteGoods(index,item)" :data-set="index">删除</span>
+        </li>
+      </ul>
+      <footer>
+        <input type="checkbox" :checked="readyPayGoods.length == buycarDate.length" @click="checkAll"><span>全选</span>
+        <p>所选商品总数： {{ getGoodsAllCount }}件</p>
+        <p>所选商品总价： {{ getTotal }}元</p>
+        <p v-for="g in readyPayGoods" :key="g.id">
+          <span>已勾选商品 {{ g.goodsname}} 数量: {{ g.goodscount }}</span>
+        </p>
+      </footer>
+
+    </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'home',
-  path: '/home',
+  name: 'buycar',
   data () {
     return {
-      data: [],
-      addsgoods:[]
+      buycarDate: [],
+      readyPayGoods: [],
+      goodsAllCount: null,
+      Total: null,
+      checkbox: 0,
+      isCheckedAll: false
     }
   },
-  methods: {
-    toBuycar () {
-      this.$router.push({path:'/buycar'})
-    },
-    addBuycar (e) {
-      let ishas = false
-      if (this.addsgoods.length == 0) {
-         this.addsgoods.push({
-            goodsId: e.path[1].dataset.set,
-            goodsname: e.path[1].children[0].innerText,
-            goodsauthor: e.path[1].children[2].innerText,
-            goodsprice: e.path[1].children[3].innerText,
-            goodscount: 1
-         })
-          alert('添加成功！')
-          localStorage.setItem('Buycar-list',JSON.stringify(this.addsgoods))
-      } else {
-        this.addsgoods.forEach(g => {
-          if (g.goodsId == e.path[1].dataset.set) {
-            alert('该物品已加入购物车！') 
-            ishas = true
-          }
-        })
-        if (!ishas) {
-          this.addsgoods.push({
-            goodsId: e.path[1].dataset.set,
-            goodsname: e.path[1].children[0].innerText,
-            goodsauthor: e.path[1].children[2].innerText,
-            goodsprice: e.path[1].children[3].innerText,
-            goodscount: 1
-         })
-         alert('添加成功！')
-          localStorage.setItem('Buycar-list',JSON.stringify(this.addsgoods))
+  methods : {
+    // 删除
+    deleteGoods (idx,item) {
+      let a = confirm('确认删除？')
+      let newcheckbox = []
+      if (a) {
+        this.buycarDate.splice(idx,1)
+        if (this.readyPayGoods.indexOf(item) != -1) {
+          this.readyPayGoods.splice(this.readyPayGoods.indexOf(item),1)
         }
+        // 判断点击未选中的货物删除之后如何重置待付款货物 ！！！
+        // localStorage.setItem('Buycar-list',JSON.stringify(this.buycarDate))
       }
-      console.log(this.addsgoods)
+    },
+    addCount (n) {
+      this.buycarDate[n].goodscount ++
+      // 若库存有限 设定上限值
+    },
+    relCount (n) {
+      // 如果只有一件减冬瓜皮
+      if (this.buycarDate[n].goodscount == 1) {
+        return
+      }
+      this.buycarDate[n].goodscount --
+    },
+    goodsTotal (n,m) {
+      let price = parseFloat(n.slice(0,-1))
+      let total = (price * parseFloat(m))
+      return total.toFixed(2)
+    },
+    // 全选
+    checkAll () {
+      // 如果全部单选框都没有选中
+      if (this.isCheckedAll == false) {
+        this.isCheckedAll = true
+        this.readyPayGoods = []
+        this.checkbox = []
+        // 防止数组同源
+        this.readyPayGoods = [...this.buycarDate]
+      } else {
+        this.isCheckedAll = false
+        this.readyPayGoods = []
+        this.checkbox = 0
+      }
+    },
+    // 单选
+    checkOne (idx,item) {
+      // 只要indexOf的值不是-1 说明数组中已经有某个东西 便于操作
+      if (this.readyPayGoods.indexOf(item) == -1) {
+        this.checkbox = this.checkbox+1
+        this.readyPayGoods.push(this.buycarDate[idx])
+        if (this.checkbox == this.buycarDate.length) {
+          this.isCheckedAll = true
+        }
+      } else {
+        this.checkbox = this.checkbox - 1
+        // 匹配到待付款物品的下标，进行操作
+        this.readyPayGoods.splice(this.readyPayGoods.indexOf(item),1)
+        this.isCheckedAll = false
+      }
+    }
+  },
+  computed : {
+    getGoodsAllCount () {
+      let allCounts = 0
+      this.readyPayGoods.forEach(g => {
+        allCounts += g.goodscount
+      })
+      return allCounts
+    },
+    getTotal () {
+      let price = 0
+      this.readyPayGoods.forEach(g => {
+        price += parseFloat(g.goodscount) * parseFloat(g.goodsprice.slice(0,-1))
+      })
+      return price.toFixed(2)
     }
   },
   created () {
-    this.axios.get('https://www.easy-mock.com/mock/5c1b0deb48952b7bd6514342/example/lykmobileshopAppdata')
-      .then((response) => {
-      this.data = response.data
-      }).catch(()=>{
-      console.log('加载失败')
-    })
-    if (localStorage.getItem('Buycar-list') === null) {
-      this.addsgoods = []
+    // 实际操作应该也是获取用户的个人信息一类api
+    if (localStorage.getItem('Buycar-list') == null) {
+      this.buycarDate = []
     } else {
-      this.addsgoods = JSON.parse(localStorage.getItem('Buycar-list'))
+        this.buycarDate = JSON.parse(localStorage.getItem('Buycar-list'))
     }
-  },
-  mounted () {
-    
   }
 }
 </script>
 
-<style lang="less" scope>
-  .goods-list-menu {
-    text-align: left;
-    list-style: none;
-    .goods-list {
-      padding: 5px;
-      .add-goods-buycar {
-        height: 60px;
-        width: 200px;
-        bottom:0;
-        border:none;
-        outline: none;
-        background: rgb(243, 129, 35);
-      }      
-      .goods-name {
-        font-size: 20px;
-        font-weight: bold;
-      }
-      .goods-cover {
-        width: 100px;
-      }
+<style lang="less" scoped>
+div {
+  text-align: left;
+}
+.goods-list {
+  position: relative;
+  padding: 10px;
+  width: 500px;
+  .goods-name {
+    color:orange;
+  }
+  .count-btn-wrap {
+    display: flex;
+      .goods-count {
+        position: relative;
+        display: block;
+        height: 30px;
+    }
+      .btn-span {
+        display: block;
+        width: 30px;
+        height: 30px;
+        line-height: 30px;
+        text-align: center;
+        border: 1px solid black;
     }
   }
-  .to-goods-buycar {
-    position: fixed;
-    height: 60px;
-    width: 300px;
-    bottom:0;
-    border:none;
-    outline: none;
-    background: lightblue;
+
+  .delete-span {
+    position: absolute;
+    display: block;
+    width: 80px;
+    height: 40px;
+    line-height: 40px;
+    right: 10px;
+    top:50%;
+    transform: translateY(-50%);
+    z-index: 10;
+    text-align: center;
+    color:#fff;
+    background: red;
+    cursor: pointer;
   }
+}
+footer {
+  position: fixed;
+  width: 100%;
+  bottom:0;
+  background: pink;
+  z-index: 11;
+}
+ul {
+  margin-bottom:500px;
+}
 </style>
+
+
