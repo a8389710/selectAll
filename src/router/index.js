@@ -3,7 +3,8 @@ import Router from 'vue-router'
 import HelloWorld from '@/components/HelloWorld'
 import Buycar from '@//components/buycar'
 import Home from '@//components/home'
-import Learn from '@/components/learnbuycar'
+import Tabs from '@/components/tabs'
+import Danmu from '@/components/danmu'
 
 
 
@@ -28,9 +29,14 @@ export default new Router({
       component: Home
     },    
     {
-      path: '/learn',
-      name: 'learn',
-      component: Learn
+      path: '/tabs',
+      name: 'tabs',
+      component: Tabs
     },   
+    {
+      path: '/danmu',
+      name: 'danmu',
+      component: Danmu
+    }, 
   ]
 })

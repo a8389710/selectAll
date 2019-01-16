@@ -98,12 +98,14 @@ export default {
     }
   },
   created () {
-    this.axios.get('https://www.easy-mock.com/mock/5c1b0deb48952b7bd6514342/example/lykmobileshopAppdata')
+    // this.axios.get('https://www.easy-mock.com/mock/5c1b0deb48952b7bd6514342/example/lykmobileshopAppdata')
+    // vue 使用本地json文件必须放在static里面才能使用
+      this.axios.get('static/books.json')
       .then((response) => {
       this.allGoods = response.data
       this.showGoods = [...this.allGoods]
       }).catch(()=>{
-      console.log('加载失败')
+      alert('加载失败')
     })
     if (localStorage.getItem('Buycar-list') === null) {
       this.addsGoods = []

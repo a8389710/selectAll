@@ -27,6 +27,8 @@ ul {list-style: none}
 * {
   box-sizing: border-box;
 }
+button{outline: none;border: none;cursor: pointer;color:#fff;}
+button:hover{background: orange;}
 /* input-num属性时去掉右侧默认控件 */
 input::-webkit-outer-spin-button,
 input::-webkit-inner-spin-button {
